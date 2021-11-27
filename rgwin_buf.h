@@ -32,6 +32,8 @@ typedef struct window_textbuffer_struct {
     long numruns;
     long runssize;
 
+    glsi32 stylehints[style_NUMSTYLES][stylehint_NUMHINTS];
+
     /* The following are meaningful only for the current line input request. */
     /* Note that inbuf points to memory outside the library. Usually it's owned by the dispatch layer. */
     void *inbuf; /* char* or glui32*, depending on inunicode. */

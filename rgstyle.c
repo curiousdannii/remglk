@@ -11,15 +11,54 @@
 #include "rgwin_grid.h"
 #include "rgwin_buf.h"
 
-/* This version of the library doesn't accept style hints. */
+/*
+
+TODO:
+- autosave stylehints
+- send live updated page background colour
+
+*/
+
+glsi32 stylehints[2][style_NUMSTYLES][stylehint_NUMHINTS];
+
+void gli_initialize_stylehints()
+{
+    for (int wintype = 0; wintype < 2; wintype++) {
+        for (int style = 0; style < style_NUMSTYLES; style++) {
+            for (int stylehint = 0; stylehint < stylehint_NUMHINTS; stylehint++) {
+                stylehints[wintype][style][stylehint] = MAGIC_STYLEHINT_UNSET;
+            }
+        }
+    }
+}
 
 void glk_stylehint_set(glui32 wintype, glui32 styl, glui32 hint, 
     glsi32 val)
 {
+    if (styl >= style_NUMSTYLES || hint >= stylehint_NUMHINTS) {
+        return;
+    }
+
+    if (wintype == wintype_AllTypes || wintype == wintype_TextBuffer) {
+        stylehints[STYLEHINTS_BUFFER][styl][hint] = val;
+    }
+    if (wintype == wintype_AllTypes || wintype == wintype_TextGrid) {
+        stylehints[STYLEHINTS_GRID][styl][hint] = val;
+    }
 }
 
 void glk_stylehint_clear(glui32 wintype, glui32 styl, glui32 hint)
 {
+    if (styl >= style_NUMSTYLES || hint >= stylehint_NUMHINTS) {
+        return;
+    }
+
+    if (wintype == wintype_AllTypes || wintype == wintype_TextBuffer) {
+        stylehints[STYLEHINTS_BUFFER][styl][hint] = MAGIC_STYLEHINT_UNSET;
+    }
+    if (wintype == wintype_AllTypes || wintype == wintype_TextGrid) {
+        stylehints[STYLEHINTS_GRID][styl][hint] = MAGIC_STYLEHINT_UNSET;
+    }
 }
 
 glui32 glk_style_distinguish(window_t *win, glui32 styl1, glui32 styl2)

@@ -1030,10 +1030,23 @@ void gli_windows_update(data_specialreq_t *special, int newgeneration)
             data_window_t *dat = data_window_alloc(win->updatetag,
                 win->type, win->rock);
             dat->size = win->bbox;
+            if (win->type == wintype_TextBuffer) {
+                window_textbuffer_t *dwin = win->data;
+                for (int style = 0; style < style_NUMSTYLES; style++) {
+                    for (int stylehint = 0; stylehint < stylehint_NUMHINTS; stylehint++) {
+                        dat->stylehints[style][stylehint] = dwin->stylehints[style][stylehint];
+                    }
+                }
+            }
             if (win->type == wintype_TextGrid) {
                 window_textgrid_t *dwin = win->data;
                 dat->gridwidth = dwin->width;
                 dat->gridheight = dwin->height;
+                for (int style = 0; style < style_NUMSTYLES; style++) {
+                    for (int stylehint = 0; stylehint < stylehint_NUMHINTS; stylehint++) {
+                        dat->stylehints[style][stylehint] = dwin->stylehints[style][stylehint];
+                    }
+                }
             }
             if (win->type == wintype_Graphics) {
                 window_graphics_t *dwin = win->data;

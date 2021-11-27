@@ -1568,6 +1568,95 @@ void data_window_print(data_window_t *dat)
         printf("   \"gridwidth\":%d, \"gridheight\":%d,\n", dat->gridwidth, dat->gridheight);
     if (dat->type == wintype_Graphics)
         printf("   \"graphwidth\":%d, \"graphheight\":%d,\n", dat->gridwidth, dat->gridheight);
+
+    /* Stylehints */
+    if (dat->type == wintype_TextBuffer || dat->type == wintype_TextGrid) {
+        printf("   \"stylehints\": [");
+        for (int style = 0; style < style_NUMSTYLES; style++) {
+            printf("{");
+            int style_has_hints = 0;
+            for (int stylehint = 0; stylehint < stylehint_NUMHINTS; stylehint++) {
+                if (dat->stylehints[style][stylehint] != MAGIC_STYLEHINT_UNSET) {
+                    style_has_hints = 1;
+                    break;
+                }
+            }
+            if (style_has_hints == 1) {
+                int first_hint = 1;
+                for (int stylehint = 0; stylehint < stylehint_NUMHINTS; stylehint++) {
+                    glsi32 val = dat->stylehints[style][stylehint];
+                    if (val != MAGIC_STYLEHINT_UNSET) {
+                        if (first_hint) {
+                            first_hint = 0;
+                        } else {
+                            printf(", ");
+                        }
+                        switch (stylehint) {
+                            case stylehint_Indentation:
+                                printf("\"margin-left\": \"%dem\"", val);
+                                break;
+                            case stylehint_ParaIndentation:
+                                printf("\"text-indent\": \"%dem\"", val);
+                                break;
+                            case stylehint_Justification:
+                                printf("\"text-align\": ");
+                                switch (val) {
+                                    case stylehint_just_LeftRight: printf("\"justify\""); break;
+                                    case stylehint_just_Centered: printf("\"center\""); break;
+                                    case stylehint_just_RightFlush: printf("\"right\""); break;
+                                    default: printf("\"left\""); break;
+                                }
+                                break;
+                            case stylehint_Size: {
+                                glsi32 size = 10 + val;
+                                printf("\"font-size\": \"%d.%dem\"", size / 10, size % 10);
+                                break;
+                            }
+                            case stylehint_Weight:
+                                printf("\"font-weight\": ");
+                                switch (val) {
+                                    case -1: printf("\"lighter\""); break;
+                                    case 1: printf("\"bold\""); break;
+                                    default: printf("\"normal\""); break;
+                                }
+                                break;
+                            case stylehint_Oblique:
+                                printf("\"font-style\": ");
+                                if (val) {
+                                    printf("\"italic\"");
+                                } else {
+                                    printf("\"normal\"");
+                                }
+                                break;
+                            case stylehint_Proportional:
+                                printf("\"font-family\": ");
+                                if (val) {
+                                    printf("\"var(--glkote-prop-family)\"");
+                                } else {
+                                    printf("\"var(--glkote-mono-family)\"");
+                                }
+                                break;
+                            case stylehint_TextColor:
+                                printf("\"color\": \"#%06X\"", val);
+                                break;
+                            case stylehint_BackColor:
+                                printf("\"background-color\": \"#%06X\"", val);
+                                break;
+                            case stylehint_ReverseColor:
+                                printf("\"reverse\": %d", val);
+                                break;
+                        }
+                    }
+                }
+            }
+            printf("}");
+            if (style + 1 < style_NUMSTYLES) {
+                printf(", ");
+            }
+        }
+        printf("],");
+    }
+
     printf("   \"left\":%d, \"top\":%d, \"width\":%d, \"height\":%d }",
         dat->size.left, dat->size.top, dat->size.right-dat->size.left, dat->size.bottom-dat->size.top);
 }

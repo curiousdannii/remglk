@@ -63,6 +63,13 @@ window_textbuffer_t *win_textbuffer_create(window_t *win)
     dwin->width = -1;
     dwin->height = -1;
 
+    /* Freeze the current stylehints */
+    for (int style = 0; style < style_NUMSTYLES; style++) {
+        for (int stylehint = 0; stylehint < stylehint_NUMHINTS; stylehint++) {
+            dwin->stylehints[style][stylehint] = stylehints[STYLEHINTS_BUFFER][style][stylehint];
+        }
+    }
+
     return dwin;
 }
 

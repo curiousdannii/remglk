@@ -107,6 +107,7 @@ struct data_window_struct {
     glui32 rock;
     grect_t size;
     glui32 gridwidth, gridheight;
+    glsi32 stylehints[style_NUMSTYLES][stylehint_NUMHINTS];
 };
 
 /* data_input_t: Represents the input request of one window. */

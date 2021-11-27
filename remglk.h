@@ -84,7 +84,7 @@ struct glk_window_struct {
 
     glui32 style;
     glui32 hyperlink;
-    
+
     /* only used in a temporary library_state, while deserializing. */
     data_tempbufinfo_t *tempbufinfo;
     
@@ -277,6 +277,12 @@ extern fileref_t *gli_fileref_alloc_inactive(void);
 extern void gli_fileref_dealloc_inactive(fileref_t *fref);
 extern void gli_delete_fileref(fileref_t *fref);
 extern int gli_filerefs_update_from_state(fileref_t **list, int count);
+
+#define STYLEHINTS_BUFFER 0
+#define STYLEHINTS_GRID 1
+#define MAGIC_STYLEHINT_UNSET (-16772556) // 0xFF001234
+extern glsi32 stylehints[2][style_NUMSTYLES][stylehint_NUMHINTS];
+extern void gli_initialize_stylehints(void);
 
 /* A macro that I can't think of anywhere else to put it. */
 

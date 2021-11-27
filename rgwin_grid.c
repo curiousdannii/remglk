@@ -43,6 +43,13 @@ window_textgrid_t *win_textgrid_create(window_t *win)
 
     dwin->inarrayrock.num = 0;
 
+    /* Freeze the current stylehints */
+    for (int style = 0; style < style_NUMSTYLES; style++) {
+        for (int stylehint = 0; stylehint < stylehint_NUMHINTS; stylehint++) {
+            dwin->stylehints[style][stylehint] = stylehints[STYLEHINTS_GRID][style][stylehint];
+        }
+    }
+
     return dwin;
 }
 

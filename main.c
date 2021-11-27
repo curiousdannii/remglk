@@ -266,6 +266,7 @@ int main(int argc, char *argv[])
     gli_initialize_streams();
     gli_initialize_filerefs();
     gli_initialize_events();
+    gli_initialize_stylehints();
 
     inittime = TRUE;
     if (!glkunix_startup_code(&startdata)) {
