@@ -1545,6 +1545,66 @@ void data_window_free(data_window_t *dat)
     free(dat);
 }
 
+#define stylehint_character_hints (3)
+
+void print_css_property(int stylehint, glsi32 val) {
+    switch (stylehint) {
+        case stylehint_Indentation:
+            printf("\"margin-left\": \"%dem\"", val);
+            break;
+        case stylehint_ParaIndentation:
+            printf("\"text-indent\": \"%dem\"", val);
+            break;
+        case stylehint_Justification:
+            printf("\"text-align\": ");
+            switch (val) {
+                case stylehint_just_LeftRight: printf("\"justify\""); break;
+                case stylehint_just_Centered: printf("\"center\""); break;
+                case stylehint_just_RightFlush: printf("\"right\""); break;
+                default: printf("\"left\""); break;
+            }
+            break;
+        case stylehint_Size: {
+            glsi32 size = 10 + val;
+            printf("\"font-size\": \"%d.%dem\"", size / 10, size % 10);
+            break;
+        }
+        case stylehint_Weight:
+            printf("\"font-weight\": ");
+            switch (val) {
+                case -1: printf("\"lighter\""); break;
+                case 1: printf("\"bold\""); break;
+                default: printf("\"normal\""); break;
+            }
+            break;
+        case stylehint_Oblique:
+            printf("\"font-style\": ");
+            if (val) {
+                printf("\"italic\"");
+            } else {
+                printf("\"normal\"");
+            }
+            break;
+        case stylehint_Proportional:
+            printf("\"font-family\": ");
+            if (val) {
+                printf("\"var(--glkote-prop-family)\"");
+            } else {
+                printf("\"var(--glkote-mono-family)\"");
+            }
+            break;
+        case stylehint_TextColor:
+            printf("\"color\": \"#%06X\"", val);
+            break;
+        case stylehint_BackColor:
+            printf("\"background-color\": \"#%06X\"", val);
+            break;
+        case stylehint_ReverseColor:
+            printf("\"reverse\": %d", val);
+            break;
+    }
+}
+
 void data_window_print(data_window_t *dat)
 {
     char *typename;
@@ -1571,19 +1631,33 @@ void data_window_print(data_window_t *dat)
 
     /* Stylehints */
     if (dat->type == wintype_TextBuffer || dat->type == wintype_TextGrid) {
-        printf("   \"stylehints\": [");
+        printf("   \"styles\": {\n");
+        int first_rule = 1;
         for (int style = 0; style < style_NUMSTYLES; style++) {
-            printf("{");
-            int style_has_hints = 0;
-            for (int stylehint = 0; stylehint < stylehint_NUMHINTS; stylehint++) {
+            char *stylename = name_for_style(style);
+            int style_has_div_hints = 0;
+            int style_has_span_hints = 0;
+            for (int stylehint = 0; stylehint < stylehint_character_hints; stylehint++) {
                 if (dat->stylehints[style][stylehint] != MAGIC_STYLEHINT_UNSET) {
-                    style_has_hints = 1;
+                    style_has_div_hints = 1;
                     break;
                 }
             }
-            if (style_has_hints == 1) {
+            for (int stylehint = stylehint_character_hints; stylehint < stylehint_NUMHINTS; stylehint++) {
+                if (dat->stylehints[style][stylehint] != MAGIC_STYLEHINT_UNSET) {
+                    style_has_span_hints = 1;
+                    break;
+                }
+            }
+            if (style_has_div_hints == 1) {
+                if (first_rule) {
+                    first_rule = 0;
+                } else {
+                    printf(",\n");
+                }
                 int first_hint = 1;
-                for (int stylehint = 0; stylehint < stylehint_NUMHINTS; stylehint++) {
+                printf("    \"div.Style_%s\": {", stylename);
+                for (int stylehint = 0; stylehint < stylehint_character_hints; stylehint++) {
                     glsi32 val = dat->stylehints[style][stylehint];
                     if (val != MAGIC_STYLEHINT_UNSET) {
                         if (first_hint) {
@@ -1591,70 +1665,34 @@ void data_window_print(data_window_t *dat)
                         } else {
                             printf(", ");
                         }
-                        switch (stylehint) {
-                            case stylehint_Indentation:
-                                printf("\"margin-left\": \"%dem\"", val);
-                                break;
-                            case stylehint_ParaIndentation:
-                                printf("\"text-indent\": \"%dem\"", val);
-                                break;
-                            case stylehint_Justification:
-                                printf("\"text-align\": ");
-                                switch (val) {
-                                    case stylehint_just_LeftRight: printf("\"justify\""); break;
-                                    case stylehint_just_Centered: printf("\"center\""); break;
-                                    case stylehint_just_RightFlush: printf("\"right\""); break;
-                                    default: printf("\"left\""); break;
-                                }
-                                break;
-                            case stylehint_Size: {
-                                glsi32 size = 10 + val;
-                                printf("\"font-size\": \"%d.%dem\"", size / 10, size % 10);
-                                break;
-                            }
-                            case stylehint_Weight:
-                                printf("\"font-weight\": ");
-                                switch (val) {
-                                    case -1: printf("\"lighter\""); break;
-                                    case 1: printf("\"bold\""); break;
-                                    default: printf("\"normal\""); break;
-                                }
-                                break;
-                            case stylehint_Oblique:
-                                printf("\"font-style\": ");
-                                if (val) {
-                                    printf("\"italic\"");
-                                } else {
-                                    printf("\"normal\"");
-                                }
-                                break;
-                            case stylehint_Proportional:
-                                printf("\"font-family\": ");
-                                if (val) {
-                                    printf("\"var(--glkote-prop-family)\"");
-                                } else {
-                                    printf("\"var(--glkote-mono-family)\"");
-                                }
-                                break;
-                            case stylehint_TextColor:
-                                printf("\"color\": \"#%06X\"", val);
-                                break;
-                            case stylehint_BackColor:
-                                printf("\"background-color\": \"#%06X\"", val);
-                                break;
-                            case stylehint_ReverseColor:
-                                printf("\"reverse\": %d", val);
-                                break;
-                        }
+                        print_css_property(stylehint, val);
                     }
                 }
+                printf("}");
             }
-            printf("}");
-            if (style + 1 < style_NUMSTYLES) {
-                printf(", ");
+            if (style_has_span_hints == 1) {
+                if (first_rule) {
+                    first_rule = 0;
+                } else {
+                    printf(",\n");
+                }
+                int first_hint = 1;
+                printf("    \"span.Style_%s\": {", stylename);
+                for (int stylehint = stylehint_character_hints; stylehint < stylehint_NUMHINTS; stylehint++) {
+                    glsi32 val = dat->stylehints[style][stylehint];
+                    if (val != MAGIC_STYLEHINT_UNSET) {
+                        if (first_hint) {
+                            first_hint = 0;
+                        } else {
+                            printf(", ");
+                        }
+                        print_css_property(stylehint, val);
+                    }
+                }
+                printf("}");
             }
         }
-        printf("],");
+        printf("},");
     }
 
     printf("   \"left\":%d, \"top\":%d, \"width\":%d, \"height\":%d }",

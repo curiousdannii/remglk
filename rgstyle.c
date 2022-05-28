@@ -42,7 +42,7 @@ void glk_stylehint_set(glui32 wintype, glui32 styl, glui32 hint,
     if (wintype == wintype_AllTypes || wintype == wintype_TextBuffer) {
         stylehints[STYLEHINTS_BUFFER][styl][hint] = val;
     }
-    if (wintype == wintype_AllTypes || wintype == wintype_TextGrid) {
+    if ((wintype == wintype_AllTypes || wintype == wintype_TextGrid) && hint != stylehint_Proportional) {
         stylehints[STYLEHINTS_GRID][styl][hint] = val;
     }
 }
