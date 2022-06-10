@@ -1586,12 +1586,7 @@ void print_css_property(int stylehint, glsi32 val) {
             }
             break;
         case stylehint_Proportional:
-            printf("\"font-family\": ");
-            if (val) {
-                printf("\"var(--glkote-prop-family)\"");
-            } else {
-                printf("\"var(--glkote-mono-family)\"");
-            }
+            printf("\"monospace\": %d", val ? 0 : 1);
             break;
         case stylehint_TextColor:
             printf("\"color\": \"#%06X\"", val);
