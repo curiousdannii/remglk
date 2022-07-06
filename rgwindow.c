@@ -80,10 +80,10 @@ void gli_fast_exit()
 
 static void compute_content_box(grect_t *box)
 {
-    box->left = metrics.outspacingx;
-    box->top = metrics.outspacingy;
-    box->right = metrics.width - metrics.outspacingx;
-    box->bottom = metrics.height - metrics.outspacingy;
+    box->left = (int) ceil(metrics.outspacingx);
+    box->top = (int) ceil(metrics.outspacingy);
+    box->right = (int) floor(metrics.width - metrics.outspacingx);
+    box->bottom = (int) floor(metrics.height - metrics.outspacingy);
 }
 
 glui32 gli_window_current_generation()
@@ -867,7 +867,8 @@ void glk_window_get_size(window_t *win, glui32 *width, glui32 *height)
 {
     glui32 wid = 0;
     glui32 hgt = 0;
-    int val, boxwidth, boxheight;
+    int val;
+    int boxwidth, boxheight;
     
     if (!win) {
         gli_strict_warning("window_get_size: invalid ref");
@@ -882,24 +883,24 @@ void glk_window_get_size(window_t *win, glui32 *width, glui32 *height)
         case wintype_TextGrid:
             boxwidth = win->bbox.right - win->bbox.left;
             boxheight = win->bbox.bottom - win->bbox.top;
-            val = floor((boxwidth-metrics.gridmarginx) / metrics.gridcharwidth);
+            val = (int) floor((boxwidth-metrics.gridmarginx) / metrics.gridcharwidth);
             wid = ((val >= 0) ? val : 0);
-            val = floor((boxheight-metrics.gridmarginy) / metrics.gridcharheight);
+            val = (int) floor((boxheight-metrics.gridmarginy) / metrics.gridcharheight);
             hgt = ((val >= 0) ? val : 0);
             break;
         case wintype_TextBuffer:
             boxwidth = win->bbox.right - win->bbox.left;
             boxheight = win->bbox.bottom - win->bbox.top;
-            val = floor((boxwidth-metrics.buffermarginx) / metrics.buffercharwidth);
+            val = (int) floor((boxwidth-metrics.buffermarginx) / metrics.buffercharwidth);
             wid = ((val >= 0) ? val : 0);
-            val = floor((boxheight-metrics.buffermarginy) / metrics.buffercharheight);
+            val = (int) floor((boxheight-metrics.buffermarginy) / metrics.buffercharheight);
             hgt = ((val >= 0) ? val : 0);
             break;
         case wintype_Graphics:
             boxwidth = win->bbox.right - win->bbox.left;
             boxheight = win->bbox.bottom - win->bbox.top;
-            wid = boxwidth - metrics.graphicsmarginx;
-            hgt = boxheight - metrics.graphicsmarginy;
+            wid = (int) floor(boxwidth - metrics.graphicsmarginx);
+            hgt = (int) floor(boxheight - metrics.graphicsmarginy);
             break;
     }
 

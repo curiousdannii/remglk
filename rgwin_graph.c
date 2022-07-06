@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
+
 #include "glk.h"
 #include "remglk.h"
 #include "rgdata.h"
@@ -97,10 +99,10 @@ void win_graphics_rearrange(window_t *win, grect_t *box, data_metrics_t *metrics
     int width = box->right - box->left;
     int height = box->bottom - box->top;
 
-    dwin->graphwidth = width - metrics->graphicsmarginx;
+    dwin->graphwidth = (int) floor(width - metrics->graphicsmarginx);
     if (dwin->graphwidth < 0)
         dwin->graphwidth = 0;
-    dwin->graphheight = height - metrics->graphicsmarginy;
+    dwin->graphheight = (int) floor(height - metrics->graphicsmarginy);
     if (dwin->graphheight < 0)
         dwin->graphheight = 0;
 }
