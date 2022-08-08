@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
 
 #include "glk.h"
 #include "remglk.h"
@@ -577,62 +578,74 @@ static data_raw_t *data_raw_blockread_sub(FILE *file, char *termchar)
         return NULL;
     }
 
-    if (ch >= '0' && ch <= '9') {
-        /* This accepts "01", which it really shouldn't, but whatever.
-           We also ignore the decimal part if found, which means we're
-           rounding towards zero. */
+    if ((ch >= '0' && ch <= '9') || ch == '-') {
         data_raw_t *dat = data_raw_alloc(rawtyp_Number);
+        int minus = FALSE;
+        
+        if (ch == '-') {
+            minus = TRUE;
+            ch = getc(file);
+        }
+
+        /* We accept "01" here, which is technically outside the spec. */
         while (ch >= '0' && ch <= '9') {
             dat->number = 10 * dat->number + (ch-'0');
             ch = getc(file);
         }
 
-        if (ch == '.') {
-            /* We have to think about real numbers. */
-            ch = getc(file);
-            long numer = 0;
-            long denom = 1;
-            while (ch >= '0' && ch <= '9') {
-                numer = 10 * numer + (ch-'0');
-                denom *= 10;
+        if (ch == '.' || ch == 'e' || ch == 'E') {
+            /* We have to think about real numbers. And scientific notation, for json's sake. */
+            double fval = dat->number;
+            if (ch == '.') {
                 ch = getc(file);
+                long numer = 0;
+                long numerlen = 0;
+                /* We accept "1." here, which is outside the spec. */
+                while (ch >= '0' && ch <= '9') {
+                    numer = 10 * numer + (ch-'0');
+                    numerlen++;
+                    ch = getc(file);
+                }
+                if (numerlen) {
+                    fval += numer * pow(10, -numerlen);
+                }
             }
-            dat->realnumber = (double)dat->number + (double)numer / (double)denom;
+
+            if (ch == 'e' || ch == 'E') {
+                ch = getc(file);
+                int expminus = FALSE;
+                /* We accept "1e", "1e+", and "1-e" here. Again, non-spec. */
+                if (ch == '-') {
+                    expminus = TRUE;
+                    ch = getc(file);
+                }
+                else if (ch == '+') {
+                    expminus = FALSE;
+                    ch = getc(file);
+                }
+                int expnum = 0;
+                while (ch >= '0' && ch <= '9') {
+                    expnum = 10 * expnum + (ch-'0');
+                    ch = getc(file);
+                }
+                if (expminus) {
+                    expnum = -expnum;
+                }
+                fval = fval * pow(10, expnum);
+            }
+
+            if (minus) {
+                fval = -fval;
+            }
+
+            dat->realnumber = fval;
+            dat->number = round(fval);
         }
         else {
-            dat->realnumber = (double)dat->number;
-        }
-
-        if (ch != EOF)
-            ungetc(ch, file);
-        return dat;
-    }
-
-    if (ch == '-') {
-        data_raw_t *dat = data_raw_alloc(rawtyp_Number);
-        ch = getc(file);
-        if (!(ch >= '0' && ch <= '9'))
-            gli_fatal_error("data: minus must be followed by number");
-
-        while (ch >= '0' && ch <= '9') {
-            dat->number = 10 * dat->number + (ch-'0');
-            ch = getc(file);
-        }
-        dat->number = -dat->number;
-
-        if (ch == '.') {
-            /* We have to think about real numbers. */
-            ch = getc(file);
-            long numer = 0;
-            long denom = 1;
-            while (ch >= '0' && ch <= '9') {
-                numer = 10 * numer + (ch-'0');
-                denom *= 10;
-                ch = getc(file);
+            /* Just digits; it's an integer. */
+            if (minus) {
+                dat->number = -dat->number;
             }
-            dat->realnumber = (double)dat->number - (double)numer / (double)denom;
-        }
-        else {
             dat->realnumber = (double)dat->number;
         }
 
