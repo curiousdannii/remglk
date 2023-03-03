@@ -1076,6 +1076,7 @@ data_supportcaps_t *data_supportcaps_alloc()
     supportcaps->graphics = FALSE;
     supportcaps->graphicswin = FALSE;
     supportcaps->sound = FALSE;
+    supportcaps->garglktext = FALSE;
 
     return supportcaps;
 }
@@ -1087,6 +1088,7 @@ void data_supportcaps_clear(data_supportcaps_t *supportcaps)
     supportcaps->graphics = FALSE;
     supportcaps->graphicswin = FALSE;
     supportcaps->sound = FALSE;
+    supportcaps->garglktext = FALSE;
 }
 
 void data_supportcaps_merge(data_supportcaps_t *supportcaps, data_supportcaps_t *other)
@@ -1101,6 +1103,8 @@ void data_supportcaps_merge(data_supportcaps_t *supportcaps, data_supportcaps_t 
         supportcaps->graphicswin = TRUE;
     if (other->sound)
         supportcaps->sound = TRUE;
+    if (other->garglktext)
+        supportcaps->garglktext = TRUE;
 }
 
 void data_supportcaps_free(data_supportcaps_t *supportcaps)
@@ -1127,6 +1131,8 @@ data_supportcaps_t *data_supportcaps_parse(data_raw_t *rawdata)
                 supportcaps->graphicswin = TRUE;
             if (data_raw_string_is(dat, "sound"))
                 supportcaps->sound = TRUE;
+            if (data_raw_string_is(dat, "garglktext"))
+                supportcaps->garglktext = TRUE;
         }
     }
 
@@ -1161,6 +1167,11 @@ void data_supportcaps_print(FILE *fl, data_supportcaps_t *supportcaps)
     if (supportcaps->sound) {
         if (any) fprintf(fl, ", ");
         fprintf(fl, "\"sound\"");
+        any = TRUE;
+    }
+    if (supportcaps->garglktext) {
+        if (any) fprintf(fl, ", ");
+        fprintf(fl, "\"garglktext\"");
         any = TRUE;
     }
     fprintf(fl, "]\n");   

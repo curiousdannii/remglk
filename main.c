@@ -191,6 +191,8 @@ int main(int argc, char *argv[])
                 pref_supportcaps.graphics = TRUE;
             else if (!strcmp(extracted_string, "graphicswin"))
                 pref_supportcaps.graphicswin = TRUE;
+            else if (!strcmp(extracted_string, "garglktext"))
+                pref_supportcaps.garglktext = TRUE;
             else {
                 printf("%s: -support value not recognized: %s\n", argv[0], extracted_string);
                 errflag = TRUE;

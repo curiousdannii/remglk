@@ -69,6 +69,7 @@ struct data_supportcaps_struct {
     int graphics;
     int graphicswin;
     int sound;
+    int garglktext;
 };
 
 /* data_event_t: Represents an input event (either the initial setup event,

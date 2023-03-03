@@ -77,6 +77,7 @@ typedef struct glk_schannel_struct *schanid_t;
 #define gestalt_Sound2 (21)
 #define gestalt_ResourceStream (22)
 #define gestalt_GraphicsCharInput (23)
+#define gestalt_Stylehints (0x1101)
 
 #define evtype_None (0)
 #define evtype_Timer (1)
