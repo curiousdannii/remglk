@@ -1675,7 +1675,7 @@ void data_window_print(data_window_t *dat)
                     printf(",\n");
                 }
                 int first_hint = 1;
-                printf("    \"div.Style_%s\": {", stylename);
+                printf("    \".Style_%s_par\": {", stylename);
                 for (int stylehint = 0; stylehint < stylehint_character_hints; stylehint++) {
                     glsi32 val = dat->stylehints[style][stylehint];
                     if (val != MAGIC_STYLEHINT_UNSET) {
@@ -1696,7 +1696,7 @@ void data_window_print(data_window_t *dat)
                     printf(",\n");
                 }
                 int first_hint = 1;
-                printf("    \"span.Style_%s\": {", stylename);
+                printf("    \".Style_%s\": {", stylename);
                 for (int stylehint = stylehint_character_hints; stylehint < stylehint_NUMHINTS; stylehint++) {
                     glsi32 val = dat->stylehints[style][stylehint];
                     if (val != MAGIC_STYLEHINT_UNSET) {
