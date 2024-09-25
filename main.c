@@ -28,6 +28,16 @@ char *pref_resourceurl = NULL;
 int gli_debugger = FALSE;
 #endif /* GIDEBUG_LIBRARY_SUPPORT */
 
+typedef struct dataresource_struct {
+    int num;
+    int isbinary;
+    char *pathname;
+    int len;
+    void *ptr;
+} dataresource_t;
+static dataresource_t *dataresources = NULL;
+static int numdataresources = 0, dataresource_size = 0;
+
 /* Some constants for my wacky little command-line option parser. */
 #define ex_Void (0)
 #define ex_Int (1)
@@ -41,6 +51,7 @@ static int extract_value(int argc, char *argv[], char *optname, int type,
     int *argnum, int *result, int defval);
 static int string_to_bool(char *str);
 static char *construct_resourceurl(char *str, int ispath);
+static int add_dataresource(char *progname, char *str, int isbinary);
 
 #define STRBUFLEN (512)
 static char extracted_string[STRBUFLEN];
@@ -206,6 +217,18 @@ int main(int argc, char *argv[])
             pref_resourceurl = construct_resourceurl(extracted_string, FALSE);
         else if (extract_value(argc, argv, "ru", ex_Str, &ix, &val, FALSE)) 
             pref_resourceurl = construct_resourceurl(extracted_string, FALSE);
+        else if (extract_value(argc, argv, "dataresourcebin", ex_Str, &ix, &val, FALSE)) {
+            if (!add_dataresource(argv[0], extracted_string, TRUE))
+                errflag = TRUE;
+        }
+        else if (extract_value(argc, argv, "dataresourcetext", ex_Str, &ix, &val, FALSE)) {
+            if (!add_dataresource(argv[0], extracted_string, FALSE))
+                errflag = TRUE;
+        }
+        else if (extract_value(argc, argv, "dataresource", ex_Str, &ix, &val, FALSE)) {
+            if (!add_dataresource(argv[0], extracted_string, TRUE))
+                errflag = TRUE;
+        }
 #if GIDEBUG_LIBRARY_SUPPORT
         else if (extract_value(argc, argv, "D", ex_Void, &ix, &val, FALSE))
             gli_debugger = val;
@@ -244,6 +267,8 @@ int main(int argc, char *argv[])
         printf("  -support [timer, hyperlinks, graphics, graphicswin]: declare support for various input features\n");
         printf("  -resourceurl STR: URL base for image/sound files\n");
         printf("  -resourcedir STR: path to image/sound files (used to create file: URLs)\n");
+        printf("  -dataresource NUM:PATHNAME, -dataresourcebin NUM:PATHNAME, -dataresourcetext NUM:PATHNAME: tell where the data resource file with the given number can be read (default: search blorb if available)\n");
+        printf("     (file is considered binary by default, or text if -dataresourcetext is used)\n");
         printf("  -singleturn BOOL: exit the process after responding to one input (default 'no')\n");
         printf("  -stderr BOOL: send errors to stderr rather than stdout (default 'no')\n");
 #if GIDEBUG_LIBRARY_SUPPORT
@@ -424,6 +449,39 @@ static int string_to_bool(char *str)
     return -1;
 }
 
+/* Given an argument NUM:PATHNAME from the command line, add an entry
+   to the dataresources array. */
+static int add_dataresource(char *progname, char *str, int isbinary)
+{
+    if (!strlen(str)) {
+        printf("%s: -dataresource option requires NUM:PATHNAME\n\n", progname);
+        return FALSE;
+    }
+    char *sep = strchr(str, ':');
+    if (!sep || sep == str || *(sep+1) == '\0') {
+        printf("%s: -dataresource option requires NUM:PATHNAME\n\n", progname);
+        return FALSE;
+    }
+    *sep = '\0';
+    sep++;
+    int val = atoi(str);
+    if (!dataresources || dataresource_size == 0) {
+        dataresource_size = 4;
+        dataresources = (dataresource_t *)malloc(dataresource_size * sizeof(dataresource_t));
+    }
+    else if (numdataresources >= dataresource_size) {
+        dataresource_size *= 2;
+        dataresources = (dataresource_t *)realloc(dataresources, dataresource_size * sizeof(dataresource_t));
+    }
+    dataresources[numdataresources].num = val;
+    dataresources[numdataresources].isbinary = isbinary;
+    dataresources[numdataresources].pathname = strdup(sep);
+    dataresources[numdataresources].ptr = NULL;
+    dataresources[numdataresources].len = 0;
+    numdataresources++;
+    return TRUE;
+}
+
 /* Given a path or URL (taken from the resourcedir/resourceurl argument),
    return a (malloced) string containing a URL form. If ispath is
    true, the path is absolutized and turned into a file: URL. */
@@ -459,6 +517,55 @@ static char *construct_resourceurl(char *str, int ispath)
     }
 
     return res;
+}
+
+/* Get the data for data chunk num (as specified in command-line arguments,
+   if any).
+   The data is read from the given pathname and stashed in memory.
+   This is memory-hoggish, but so is the rest of glk_stream_open_resource();
+   see comments there.
+   (You might wonder why we don't call gli_stream_open_pathname() and
+   handle the file as a file-based stream. Turns out that doesn't work;
+   the handling of unicode streams is subtly different for resource
+   streams and the file-based code won't work. Oh well.)
+*/
+int gli_get_dataresource_info(int num, void **ptr, glui32 *len, int *isbinary)
+{
+    int ix;
+    /* The dataresources array isn't sorted (or even checked for duplicates),
+       so we search it linearly. There probably aren't a lot of entries. */
+    for (ix=0; ix<numdataresources; ix++) {
+        if (dataresources[ix].num == num) {
+            *isbinary = dataresources[ix].isbinary;
+            *ptr = NULL;
+            *len = 0;
+            if (dataresources[ix].ptr) {
+                /* Already loaded. */
+            }
+            else {
+                FILE *fl = fopen(dataresources[ix].pathname, "rb");
+                if (!fl) {
+                    gli_strict_warning("stream_open_resource: unable to read given pathname.");
+                    return FALSE;
+                }
+                fseek(fl, 0, SEEK_END);
+                dataresources[ix].len = ftell(fl);
+                dataresources[ix].ptr = malloc(dataresources[ix].len+1);
+                fseek(fl, 0, SEEK_SET);
+                int got = fread(dataresources[ix].ptr, 1, dataresources[ix].len, fl);
+                fclose(fl);
+                if (got != dataresources[ix].len) {
+                    gli_strict_warning("stream_open_resource: unable to read all resource data.");
+                    return FALSE;
+                }
+            }
+            *ptr = dataresources[ix].ptr;
+            *len = dataresources[ix].len;
+            return TRUE;
+        }
+    }
+
+    return FALSE;
 }
 
 /* This opens a file for reading or writing. (You cannot open a file

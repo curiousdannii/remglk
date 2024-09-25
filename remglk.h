@@ -10,7 +10,7 @@
 #include "gi_dispa.h"
 #include "gi_debug.h"
 
-#define LIBRARY_VERSION "0.3.0"
+#define LIBRARY_VERSION "0.3.1"
 
 /* We define our own TRUE and FALSE and NULL, because ANSI
     is a strange world. */
@@ -78,6 +78,7 @@ struct glk_window_struct {
     int char_request;
     int char_request_uni;
     int hyperlink_request;
+    int mouse_request;
 
     int echo_line_input; /* applies to future line inputs, not the current */
     glui32 terminate_line_input; /* ditto; this is a bitmask of flags */
@@ -191,6 +192,8 @@ extern gidispatch_rock_t (*gli_dispatch_restore_arr)(long bufkey, glui32 len, ch
 extern int pref_stderr;
 extern int pref_singleturn;
 extern char *pref_resourceurl;
+
+extern int gli_get_dataresource_info(int num, void **ptr, glui32 *len, int *isbinary);
 
 #if GIDEBUG_LIBRARY_SUPPORT
 /* Has the user requested debug support? */
